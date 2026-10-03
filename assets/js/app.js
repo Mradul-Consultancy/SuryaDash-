@@ -581,10 +581,21 @@ function stopDemo(){if(demoTimer){clearInterval(demoTimer);demoTimer=null;}}
    FIREBASE HOOKS
    ═══════════════════════════════════════════════════════════════ */
 FB.onData((raw,ms)=>{
+  if (isDemoOnly) return; // In demo-only mode, ignore Firebase data entirely
+  // Check if data has actual sensor values (not just empty objects)
+  const n = normalise(raw);
+  const hasRealData = n && (n.vals.T1 !== 0 || n.vals.T2 !== 0 || n.vals.T3 !== 0 || n.vals.T4 !== 0 || n.vals.F1 !== 0 || n.vals.F2 !== 0);
+  if (!hasRealData) {
+    // Firebase is reachable but has no real sensor data — start demo
+    if (!demoTimer) startDemo();
+    setRibbon('connected', 'NO DATA');
+    return;
+  }
   stopDemo(); if(!isLive){isLive=true;ALARMS.playConn();ALARMS.toast('ok','🔥','Firebase Connected',`Live · ${ms}ms`);}
   setRibbon('connected'); applySnapshot(raw);
 });
 FB.onStatus(st=>{
+  if (isDemoOnly) return; // In demo-only mode, skip Firebase status updates
   renderInspector(FB.getLastRaw(),st);
   if(st.state==='disconnected'){setRibbon('disconnected');if(!isLive)startDemo();}
   else if(st.state==='connected')setRibbon('connected', st.hasData===false ? 'NO DATA' : '');
@@ -628,7 +639,16 @@ async function boot() {
   }
 
   FB.start(POLL_SEC*1000);
-  setTimeout(()=>{ if(!isLive&&!demoTimer) startDemo(); },6000);
+  // In demo-only mode, start demo immediately instead of waiting 6 seconds
+  if (isDemoOnly) {
+    startDemo();
+    setRibbon('disconnected');
+    const pi=$('pill'),pt=$('pill-txt');
+    if(pi) pi.className='live-pill demo';
+    if(pt) pt.textContent='DEMO';
+  } else {
+    setTimeout(()=>{ if(!isLive&&!demoTimer) startDemo(); },6000);
+  }
 }
 
 /* First real data point clears the loading overlay/skeleton */
