@@ -1,0 +1,10 @@
+# SuryaDash — robots.txt
+# Replace https:// solar-dashboard.web.app with your real deployed domain after go-live.
+
+User-agent: *
+Allow: /
+Disallow: /firmware/
+Disallow: /firebase-config/
+Disallow: /deploy/
+
+Sitemap: https:// solar-dashboard.web.app/sitemap.xml

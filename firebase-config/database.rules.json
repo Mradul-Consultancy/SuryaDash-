@@ -1,0 +1,107 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "sites": {
+      "$siteId": {
+        "meta": {
+          "owner": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString()"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber()"
+          },
+          ".read": "auth != null && (root.child('sites').child($siteId).child('meta/owner').val() === auth.uid || root.child('sites').child($siteId).child('members').child(auth.uid).exists())",
+          ".write": "auth != null && ((!data.exists() && newData.child('owner').val() === auth.uid) || data.child('owner').val() === auth.uid)"
+        },
+        "members": {
+          "$uid": {
+            ".read": "auth != null && root.child('sites').child($siteId).child('meta/owner').val() === auth.uid",
+            ".write": "auth != null && root.child('sites').child($siteId).child('meta/owner').val() === auth.uid",
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "sensors": {
+          ".read": "auth != null && (root.child('sites').child($siteId).child('meta/owner').val() === auth.uid || root.child('sites').child($siteId).child('members').child(auth.uid).exists())",
+          ".write": "auth != null && (root.child('sites').child($siteId).child('meta/owner').val() === auth.uid || root.child('sites').child($siteId).child('devices').child(auth.uid).exists())",
+          "T1": {
+            ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 200"
+          },
+          "T2": {
+            ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 200"
+          },
+          "T3": {
+            ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 200"
+          },
+          "T4": {
+            ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 200"
+          },
+          "F1": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "F2": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 50"
+          },
+          "updated_at": {
+            ".validate": "newData.isNumber()"
+          },
+          "pressure": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "controls": {
+          ".read": "auth != null && (root.child('sites').child($siteId).child('meta/owner').val() === auth.uid || root.child('sites').child($siteId).child('members').child(auth.uid).exists() || root.child('sites').child($siteId).child('devices').child(auth.uid).exists())",
+          ".write": "auth != null && (root.child('sites').child($siteId).child('meta/owner').val() === auth.uid || root.child('sites').child($siteId).child('members').child(auth.uid).exists())",
+          "power": {
+            ".validate": "newData.isBoolean()"
+          },
+          "solenoid": {
+            ".validate": "newData.isBoolean()"
+          },
+          "pump": {
+            ".validate": "newData.isBoolean()"
+          },
+          "lamp": {
+            ".validate": "newData.isBoolean()"
+          },
+          "pressure": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "devices": {
+          "$uid": {
+            ".read": "auth != null && root.child('sites').child($siteId).child('meta/owner').val() === auth.uid",
+            ".write": "auth != null && root.child('sites').child($siteId).child('meta/owner').val() === auth.uid",
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "email": {
+          ".validate": "newData.isString()"
+        },
+        "sites": {
+          "$siteId": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    }
+  }
+}

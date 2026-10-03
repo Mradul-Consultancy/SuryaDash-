@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<!-- Primary meta -->
+<title>SuryaDash — Real-time Thermal & Flow Monitoring</title>
+<meta name="description" content="Live solar thermal collector monitoring: temperature, flow, efficiency, alarms, and multi-site management, powered by Firebase.">
+<meta name="author" content="SuryaDash">
+<link rel="canonical" href="https://solar-dashboard.web.app/">
+
+<!-- Favicons (real, multi-size, compressed) -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b1a19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="SuryaDash — Real-time Thermal & Flow Monitoring">
+<meta property="og:description" content="Live solar thermal collector monitoring: temperature, flow, efficiency, alarms, and multi-site management, powered by Firebase.">
+<meta property="og:image" content="https://solar-dashboard.web.app/assets/img/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://solar-dashboard.web.app/">
+<meta property="og:site_name" content="SuryaDash">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SuryaDash">
+<meta name="twitter:description" content="Live solar thermal collector monitoring, powered by Firebase.">
+<meta name="twitter:image" content="https://solar-dashboard.web.app/assets/img/og-image.png">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══ AUTH GATE (v6) ══════════════════════════════════════════ -->
+<div id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">☀</div>
+      <div><div class="auth-title">SuryaDash</div><div class="auth-sub">Sign in to your dashboard</div></div>
+    </div>
+    <div class="auth-divider"></div>
+
+    <div class="auth-field"><label>Email</label><input id="auth-email" type="email" placeholder="you@example.com" autocomplete="username"></div>
+    <div class="auth-field"><label>Password</label><input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+
+    <div class="auth-btn-row">
+      <button class="auth-btn primary" id="btn-signin" onclick="doSignIn()">Sign In</button>
+      <button class="auth-btn" id="btn-signup" onclick="doSignUp()">Create Account</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+
+    <div class="auth-config-toggle"><span onclick="document.getElementById('auth-config-box').classList.toggle('show')">⚙ Configure Firebase Web API Key</span></div>
+    <div class="auth-config-box" id="auth-config-box">
+      <div class="auth-config-note">Find this at Firebase Console → Project Settings → General → <b>Web API Key</b>. This is a public identifier, safe to store here — real security comes from your Database Rules, not from hiding this key. <a href="https://console.firebase.google.com" target="_blank">Open Firebase Console →</a></div>
+      <div class="auth-field"><input id="auth-apikey" type="text" placeholder="AIzaSy..."></div>
+      <button class="auth-btn" style="width:100%" onclick="saveWebApiKey()">Save Key</button>
+    </div>
+
+    <div class="auth-demo-link"><a onclick="doDemoMode()">Skip login — just show me the demo →</a></div>
+  </div>
+</div>
+
+<div id="app-root" style="display:none">
+<main id="main-content">
+
+<!-- RIBBON -->
+<div class="ribbon">
+  <div class="ribbon-left">
+    <div class="pbi-logo">☀</div>
+    <div><div class="report-title">SuryaDash — Live Monitor</div><div class="report-sub">Thermal &amp; Flow · Firebase RTDB · Solar Physics · ROI · Multi-Site · v6.0</div></div>
+  </div>
+  <div class="ribbon-right">
+    <div class="user-badge" id="user-badge">
+      <span>👤</span><span class="user-badge-email" id="user-email-display">—</span>
+    </div>
+    <div id="site-switcher-wrap">
+      <select id="site-switcher" title="Active site"><option>Loading sites…</option></select>
+    </div>
+    <div class="fb-badge checking" id="fb-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#ffa000"><path d="M3.89 15.672L6.255.461A.542.542 0 0 1 7.27.288l2.543 4.771zm16.794 3.692l-2.25-14a.54.54 0 0 0-.919-.295L3.316 19.365l7.862 4.427a1.621 1.621 0 0 0 1.58 0zM14.6 8.127l-1.546-2.9a.542.542 0 0 0-.96 0L3.53 17.984z"/></svg>
+      <div class="fb-conn-ring" id="fb-ring"></div>
+      <div class="fb-conn-info"><span class="fb-db-name">solar-thermal-e-harvesting</span><span class="fb-status-txt" id="fb-txt">CHECKING…</span></div>
+    </div>
+    <div class="live-pill demo" id="pill"><div class="dot"></div><span id="pill-txt">DEMO</span></div>
+    <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme" aria-label="Toggle dark/light theme">☀</button>
+    <button class="icon-btn" onclick="doSignOutApp()" title="Sign out" aria-label="Sign out">🚪</button>
+    <button class="icon-btn" onclick="toggleAlertPanel()" title="Alarms" aria-label="Show alarm history"><span aria-hidden="true">🔔</span><span class="alert-badge" id="alert-badge" style="display:none" aria-label="active alarms">0</span></button>
+    <div class="clock-wrap"><div class="clock-time" id="clk-t">--:--:--</div><div class="clock-date" id="clk-d">-- --- ----</div></div>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-card"><div class="kpi-icon">⚡</div><div class="kpi-body"><div class="kpi-label">Thermal Power</div><div class="kpi-value"><span id="kv-power">-.-</span><span class="kpi-unit">kW</span></div></div><div class="kpi-sub" id="ks-power">Q=ṁ·Cp·ΔT</div></div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card"><div class="kpi-icon">🌡</div><div class="kpi-body"><div class="kpi-label">ΔT Rise</div><div class="kpi-value"><span id="kv-dt">-.-</span><span class="kpi-unit">°C</span></div></div><div class="kpi-sub">T4 − T2</div></div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card"><div class="kpi-icon">⚖</div><div class="kpi-body"><div class="kpi-label">Flow Balance</div><div class="kpi-value"><span id="kv-flow">-.-</span><span class="kpi-unit">%</span></div></div><div class="kpi-sub">F1 vs F2</div></div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card"><div class="kpi-icon">🔋</div><div class="kpi-body"><div class="kpi-label">Session / Today</div><div class="kpi-value"><span id="kv-energy">0.000</span><span class="kpi-unit">kWh</span></div></div><div class="kpi-sub"><span id="kv-daily">0.000</span> kWh today</div></div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card" style="position:relative"><div class="kpi-icon">📈</div><div class="kpi-body"><div class="kpi-label">Efficiency</div><div class="kpi-value"><span id="kv-eff">--</span><span class="kpi-unit">%</span></div></div>
+    <svg class="eff-arc" viewBox="0 0 60 34" width="60" height="34"><path d="M5,30 A25,25 0 0,1 55,30" stroke="var(--pbi-border)" stroke-width="5" fill="none" stroke-linecap="round"/><path id="arc-fill" d="M5,30 A25,25 0 0,1 55,30" stroke="var(--on)" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="0 78.5"/></svg>
+  </div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card kpi-ploss"><div class="kpi-icon">🔧</div><div class="kpi-body"><div class="kpi-label">Pipe Heat Loss</div><div class="kpi-value"><span id="kv-ploss">-.-</span><span class="kpi-unit">kW</span></div></div><div class="kpi-sub">Q=U·A·ΔT</div></div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-card kpi-health">
+    <div style="display:flex;align-items:center;gap:8px;width:100%"><span id="health-icon" style="font-size:18px">⚪</span><div class="kpi-body"><div class="kpi-label">System Health</div><div class="kpi-value" id="kv-health" style="font-size:15px">CHECKING</div></div></div>
+    <div class="health-bar-wrap"><div class="health-bar" id="health-bar"></div></div>
+  </div>
+</div>
+
+<!-- ROI STRIP (NEW v5) -->
+<div class="roi-strip">
+  <div class="roi-item"><span class="roi-ico">💰</span><div class="roi-body"><div class="roi-lbl">Money Saved</div><div class="roi-val" id="roi-money">$0.000</div></div></div>
+  <div class="roi-item"><span class="roi-ico">🌿</span><div class="roi-body"><div class="roi-lbl">CO₂ Avoided</div><div class="roi-val" id="roi-co2">0.000 kg</div></div></div>
+  <div class="roi-item"><span class="roi-ico">🌲</span><div class="roi-body"><div class="roi-lbl">Trees Equiv.</div><div class="roi-val" id="roi-trees">0.0000</div></div></div>
+  <div class="roi-item"><span class="roi-ico">⛽</span><div class="roi-body"><div class="roi-lbl">Petrol Saved</div><div class="roi-val" id="roi-petrol">0.00 L</div></div></div>
+  <div class="roi-item"><span class="roi-ico">💧</span><div class="roi-body"><div class="roi-lbl">Pump Uptime</div><div class="roi-val" id="roi-pump">0.0%</div></div></div>
+  <div class="roi-item"><span class="roi-ico">🔋</span><div class="roi-body"><div class="roi-lbl">Total kWh</div><div class="roi-val" id="roi-kwh">0.000 kWh</div></div></div>
+</div>
+
+<!-- SENSOR HEADER -->
+<div class="sensor-header-strip">
+  <div class="sh-label">SENSORS</div>
+  <div class="sh-items">
+    <div class="sh-item" style="--sh-col:var(--t1)"><span class="sh-tag">T1</span><span class="sh-name">Storage Temperature</span><span class="sh-unit" data-temp>°C</span><span class="sh-minmax" id="mm-T1">—</span></div>
+    <div class="sh-item" style="--sh-col:var(--t2)"><span class="sh-tag">T2</span><span class="sh-name">Inlet Temperature</span><span class="sh-unit" data-temp>°C</span><span class="sh-minmax" id="mm-T2">—</span></div>
+    <div class="sh-item" style="--sh-col:var(--t3)"><span class="sh-tag">T3</span><span class="sh-name">Absorber Plate</span><span class="sh-unit" data-temp>°C</span><span class="sh-minmax" id="mm-T3">—</span></div>
+    <div class="sh-item" style="--sh-col:var(--t4)"><span class="sh-tag">T4</span><span class="sh-name">Outlet Temperature</span><span class="sh-unit" data-temp>°C</span><span class="sh-minmax" id="mm-T4">—</span></div>
+    <div class="sh-item" style="--sh-col:var(--f1)"><span class="sh-tag">F1</span><span class="sh-name">Inlet Flow Rate</span><span class="sh-unit">L/min</span><span class="sh-minmax" id="mm-F1">—</span></div>
+    <div class="sh-item" style="--sh-col:var(--f2)"><span class="sh-tag">F2</span><span class="sh-name">Outlet Flow Rate</span><span class="sh-unit">L/min</span><span class="sh-minmax" id="mm-F2">—</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  <button class="tab-btn" data-tab="analytics"  onclick="switchTab('analytics')">📈 Analytics</button>
+  <button class="tab-btn" data-tab="report"     onclick="switchTab('report')">📄 Report</button>
+  <button class="tab-btn" data-tab="settings"   onclick="switchTab('settings')">⚙ Settings</button>
+</div>
+
+<!-- ══ DASHBOARD TAB ══ -->
+<div class="tab-pane active" id="tab-dashboard">
+<div class="canvas">
+  <!-- Sensor cards -->
+  <div class="sensor-row">
+    <div class="s-card" style="--accent:var(--t1)" id="sc-T1"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">T1</div><div class="s-name">Storage Temp</div><div class="s-val" id="v-T1">--.-</div><div class="s-unit" data-temp>°C</div><div class="s-delta d-fl" id="d-T1">—</div><div class="s-alarm" id="a-T1"></div></div></div>
+    <div class="s-card" style="--accent:var(--t2)" id="sc-T2"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">T2</div><div class="s-name">Inlet Temp</div><div class="s-val" id="v-T2">--.-</div><div class="s-unit" data-temp>°C</div><div class="s-delta d-fl" id="d-T2">—</div><div class="s-alarm" id="a-T2"></div></div></div>
+    <div class="s-card" style="--accent:var(--t3)" id="sc-T3"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">T3</div><div class="s-name">Absorber Plate</div><div class="s-val" id="v-T3">--.-</div><div class="s-unit" data-temp>°C</div><div class="s-delta d-fl" id="d-T3">—</div><div class="s-alarm" id="a-T3"></div></div></div>
+    <div class="s-card" style="--accent:var(--t4)" id="sc-T4"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">T4</div><div class="s-name">Outlet Temp</div><div class="s-val" id="v-T4">--.-</div><div class="s-unit" data-temp>°C</div><div class="s-delta d-fl" id="d-T4">—</div><div class="s-alarm" id="a-T4"></div></div></div>
+    <div class="s-card" style="--accent:var(--f1)" id="sc-F1"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">F1</div><div class="s-name">Inlet Flow</div><div class="s-val" id="v-F1">-.-</div><div class="s-unit">L/min</div><div class="s-delta d-fl" id="d-F1">—</div><div class="s-alarm" id="a-F1"></div></div></div>
+    <div class="s-card" style="--accent:var(--f2)" id="sc-F2"><div class="s-bar"></div><div class="s-inner"><div class="s-tag">F2</div><div class="s-name">Outlet Flow</div><div class="s-val" id="v-F2">-.-</div><div class="s-unit">L/min</div><div class="s-delta d-fl" id="d-F2">—</div><div class="s-alarm" id="a-F2"></div></div></div>
+  </div>
+
+  <!-- Controls + Solar + DC -->
+  <div class="ctrl-col">
+    <div class="ctrl-sec-title">⬡ Controls <small style="font-size:7px;color:var(--pbi-muted)">(click = toggle)</small></div>
+    <div class="c-card off" id="c-power" style="--state-col:var(--off)"><div class="c-icon">⚡</div><div class="c-name">Power Supply</div><div class="c-toggle"></div><div class="c-status" id="s-power">OFF</div></div>
+    <div class="c-card off" id="c-sol"   style="--state-col:var(--off)"><div class="c-icon">🔧</div><div class="c-name">Solenoid Valve</div><div class="c-toggle"></div><div class="c-status" id="s-sol">OFF</div></div>
+    <div class="c-card c-card--pump off" id="c-pump" style="--state-col:var(--off)">
+      <div class="pressure-bar-wrap"><div class="pressure-track"><div class="pressure-fill" id="pressure-fill"></div></div><div class="pressure-label" id="pressure-label">0%</div></div>
+      <div class="c-icon">💧</div><div class="c-name">Pump</div><div class="c-toggle"></div><div class="c-status" id="s-pump">OFF</div>
+    </div>
+    <div class="c-card off" id="c-lamp" style="--state-col:var(--off)"><div class="c-icon">💡</div><div class="c-name">Artificial Lamp</div><div class="c-toggle"></div><div class="c-status" id="s-lamp">OFF</div></div>
+
+    <!-- Solar position panel (NEW v5) -->
+    <div class="ctrl-sec-title" style="margin-top:8px">☀ Solar Position</div>
+    <div class="solar-card">
+      <div class="solar-arc-wrap">
+        <svg viewBox="0 0 100 55" width="100%" height="52">
+          <path d="M5,50 A45,45 0 0,1 95,50" stroke="var(--pbi-border)" stroke-width="2" fill="none"/>
+          <path d="M5,50 A45,45 0 0,1 95,50" stroke="#f9a825" stroke-width="2" fill="none" opacity=".3"/>
+          <circle id="sol-arc-sun" cx="50" cy="10" r="5" fill="#f9a825"/>
+          <text x="5" y="54" font-size="7" fill="var(--pbi-muted)" id="sol-rise-lbl">--:--</text>
+          <text x="70" y="54" font-size="7" fill="var(--pbi-muted)" id="sol-set-lbl">--:--</text>
+        </svg>
+      </div>
+      <div class="solar-rows">
+        <div class="solar-row"><span class="solar-row-lbl">Elevation</span><span class="solar-row-val" id="sol-elev">--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Azimuth</span><span class="solar-row-val" id="sol-az">--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">ETR (G₀)</span><span class="solar-row-val" id="sol-g0">-- W/m²</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Beam (Gb)</span><span class="solar-row-val" id="sol-gb">-- W/m²</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Air Mass</span><span class="solar-row-val" id="sol-am">--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Clearness Kt</span><span class="solar-row-val" id="sol-kt">--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Sunrise</span><span class="solar-row-val" id="sol-rise">--:--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Solar Noon</span><span class="solar-row-val" id="sol-noon">--:--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Sunset</span><span class="solar-row-val" id="sol-set">--:--</span></div>
+        <div class="solar-row"><span class="solar-row-lbl">Day Length</span><span class="solar-row-val" id="sol-daylen">-- h</span></div>
+      </div>
+    </div>
+
+    <!-- Differential controller (NEW v5) -->
+    <div class="ctrl-sec-title" style="margin-top:8px">⬡ Differential Control</div>
+    <div class="dc-card">
+      <div class="dc-diff-wrap">
+        <div><div class="dc-diff-lbl">T3 − T1 (ΔT)</div><div class="dc-diff-big" id="dc-diff">--°C</div></div>
+        <div style="text-align:right"><div class="dc-diff-lbl">Recommendation</div><div style="font-size:11px;font-weight:700;color:var(--on)" id="dc-status">--</div></div>
+      </div>
+      <div class="dc-bar-wrap"><div class="dc-bar" id="dc-bar"></div></div>
+      <div class="dc-thresholds">
+        <div class="dc-thresh"><div class="dc-thresh-lbl">ΔT ON</div><div class="dc-thresh-val" id="dc-on">8°C</div></div>
+        <div class="dc-thresh"><div class="dc-thresh-lbl">ΔT OFF</div><div class="dc-thresh-val" id="dc-off">3°C</div></div>
+      </div>
+    </div>
+
+    <!-- Session -->
+    <div class="ctrl-sec-title" style="margin-top:8px">⬡ Session</div>
+    <div class="session-card">
+      <div class="sess-row"><span class="sess-lbl">Uptime</span><span class="sess-val mono" id="sess-uptime">00:00:00</span></div>
+      <div class="sess-row"><span class="sess-lbl">Points</span><span class="sess-val mono" id="sess-pts">0</span></div>
+      <div class="sess-row"><span class="sess-lbl">Peak T3</span><span class="sess-val mono" id="sess-peak">--</span></div>
+      <div class="sess-row"><span class="sess-lbl">Peak kW</span><span class="sess-val mono" id="sess-peakkw">--</span></div>
+      <div class="sess-row"><span class="sess-lbl">Avg ΔT</span><span class="sess-val mono" id="sess-adt">--</span></div>
+      <div class="sess-row"><span class="sess-lbl">Energy</span><span class="sess-val mono" id="sess-kwh">--</span></div>
+    </div>
+    <button class="btn-full" onclick="downloadCSV()">📥 Export CSV</button>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-col">
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl"><span style="color:var(--pbi-accent)">⚡</span>Thermal Power &amp; ΔT</div><div class="legends"><div class="leg"><div class="leg-dot" style="background:var(--pbi-accent)"></div>kW</div><div class="leg"><div class="leg-dot" style="background:var(--t1)"></div>ΔT</div></div></div><div class="chart-body"><canvas id="pc"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl"><span style="color:var(--t4)">🌡</span>Temperatures T1–T4</div><div class="legends"><div class="leg"><div class="leg-dot" style="background:var(--t1)"></div>T1</div><div class="leg"><div class="leg-dot" style="background:var(--t2)"></div>T2</div><div class="leg"><div class="leg-dot" style="background:var(--t3)"></div>T3</div><div class="leg"><div class="leg-dot" style="background:var(--t4)"></div>T4</div></div></div><div class="chart-body"><canvas id="tc"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl"><span style="color:var(--f2)">💧</span>Flow Rates F1–F2</div><div class="legends"><div class="leg"><div class="leg-dot" style="background:var(--f1)"></div>F1</div><div class="leg"><div class="leg-dot" style="background:var(--f2)"></div>F2</div></div></div><div class="chart-body"><canvas id="fc"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl"><span style="color:var(--on)">📈</span>Collector Efficiency %</div></div><div class="chart-body"><canvas id="ec"></canvas></div></div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert-panel" id="alert-panel" style="display:none">
+    <div class="log-head"><div class="log-ttl">🔔 Alarm History</div><button class="btn-sm" onclick="clearAlerts()">Clear All</button></div>
+    <div class="alert-list" id="alert-list"><div class="empty-msg">No alarms</div></div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-panel">
+    <div class="log-head"><div class="log-ttl">📋 Data Log</div><div class="log-cnt" id="log-cnt">0 records</div></div>
+    <div class="log-scroll"><table>
+      <thead><tr><th>Time</th><th style="color:var(--t1)">T1</th><th style="color:var(--t2)">T2</th><th style="color:var(--t3)">T3</th><th style="color:var(--t4)">T4</th><th style="color:var(--f1)">F1</th><th style="color:var(--f2)">F2</th><th style="color:var(--pbi-accent)">kW</th><th style="color:var(--on)">Eff%</th><th style="color:var(--al-info)">PLoss</th><th style="color:var(--on)">Pwr</th><th style="color:var(--on)">Sol</th><th style="color:var(--on)">Pump</th><th style="color:var(--on)">Lamp</th></tr></thead>
+      <tbody id="log-body"><tr><td colspan="14" class="empty-msg">Waiting…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- Firebase Inspector -->
+  <div class="fbi-panel">
+    <div class="fbi-head">
+      <div class="fbi-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="#ffa000"><path d="M3.89 15.672L6.255.461A.542.542 0 0 1 7.27.288l2.543 4.771zm16.794 3.692l-2.25-14a.54.54 0 0 0-.919-.295L3.316 19.365l7.862 4.427a1.621 1.621 0 0 0 1.58 0zM14.6 8.127l-1.546-2.9a.542.542 0 0 0-.96 0L3.53 17.984z"/></svg>Firebase RTDB Inspector</div>
+      <div class="fbi-url-chip" id="fbi-url-chip"><span class="fbi-url-dot" id="fbi-url-dot"></span><span class="mono fbi-url-txt">solar-thermal-e-harvesting-default-rtdb.firebaseio.com</span></div>
+      <div class="fbi-actions"><span class="fbi-last mono" id="fbi-last">Never</span><button class="btn-sm" onclick="fetchNow()">↻ Fetch</button><button class="btn-sm" onclick="toggleFBI()">— Collapse</button></div>
+    </div>
+    <div class="fbi-body" id="fbi-body">
+      <div class="fbi-conn-card">
+        <div class="fbi-conn-visual"><div class="fbi-conn-ring-large checking" id="fbi-ring-large"><svg width="40" height="40" viewBox="0 0 24 24" fill="#ffa000"><path d="M3.89 15.672L6.255.461A.542.542 0 0 1 7.27.288l2.543 4.771zm16.794 3.692l-2.25-14a.54.54 0 0 0-.919-.295L3.316 19.365l7.862 4.427a1.621 1.621 0 0 0 1.58 0zM14.6 8.127l-1.546-2.9a.542.542 0 0 0-.96 0L3.53 17.984z"/></svg></div><div><div class="fbi-conn-state" id="fbi-conn-state">CHECKING…</div><div class="fbi-conn-detail" id="fbi-conn-detail">Attempting Firebase REST endpoint</div></div></div>
+        <div class="fbi-conn-stats">
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Status</span><span class="fbi-stat-val" id="fcs-status">—</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Response</span><span class="fbi-stat-val" id="fcs-rt">—</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Avg RT</span><span class="fbi-stat-val" id="fcs-avg">—</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Keys</span><span class="fbi-stat-val" id="fcs-keys">—</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Size</span><span class="fbi-stat-val" id="fcs-size">—</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Fetches</span><span class="fbi-stat-val" id="fcs-count">0</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Fails</span><span class="fbi-stat-val" id="fcs-fails">0</span></div>
+          <div class="fbi-stat"><span class="fbi-stat-lbl">Mode</span><span class="fbi-stat-val" id="fcs-mode">—</span></div>
+        </div>
+      </div>
+      <div class="fbi-schema-wrap"><div class="fbi-schema-title">📦 Data Structure</div><div class="fbi-schema-tree" id="fbi-schema-tree"><span style="color:var(--pbi-muted);font-size:11px">Waiting…</span></div></div>
+      <div class="fbi-raw-wrap"><div class="fbi-schema-title">{ } Raw JSON <button class="btn-sm" onclick="copyRaw()">📋 Copy</button></div><pre class="fbi-raw" id="fbi-raw">—</pre></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ ANALYTICS TAB ══ -->
+<div class="tab-pane" id="tab-analytics">
+<div class="analytics-page">
+  <div class="an-summary-grid">
+    <div class="an-card"><div class="an-val" id="an-energy">0.000</div><div class="an-lbl">Total Energy kWh</div></div>
+    <div class="an-card"><div class="an-val" id="an-daily">0.000</div><div class="an-lbl">Today kWh</div></div>
+    <div class="an-card"><div class="an-val" id="an-peakkw">--</div><div class="an-lbl">Peak Power kW</div></div>
+    <div class="an-card"><div class="an-val" id="an-peakt3">--</div><div class="an-lbl">Peak T3 °C</div></div>
+    <div class="an-card"><div class="an-val" id="an-avgeff">--</div><div class="an-lbl">Avg Efficiency %</div></div>
+    <div class="an-card"><div class="an-val" id="an-avgdt">--</div><div class="an-lbl">Avg ΔT °C</div></div>
+    <div class="an-card"><div class="an-val" id="an-ophrs">--</div><div class="an-lbl">Session Hours</div></div>
+    <div class="an-card"><div class="an-val" id="an-pts">0</div><div class="an-lbl">Data Points</div></div>
+  </div>
+  <div class="an-charts-grid-v5">
+    <div class="chart-panel an-chart-full"><div class="chart-head"><div class="chart-ttl">⚡ Thermal Power over Session</div></div><div class="chart-body" style="min-height:180px"><canvas id="a-energy-chart"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl">📈 Collector Efficiency Trend</div></div><div class="chart-body" style="min-height:170px"><canvas id="a-eff-chart"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl">🔵 T2 vs T4 Correlation</div></div><div class="chart-body" style="min-height:170px"><canvas id="a-scatter-chart"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl">📅 7-Day Energy History (kWh)</div></div><div class="chart-body" style="min-height:170px"><canvas id="a-daily-chart"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl">🔬 IEC 12975 Efficiency Curve (η vs X) <span style="font-size:9px;color:var(--pbi-muted)">requires G input in Settings</span></div></div><div class="chart-body" style="min-height:170px"><canvas id="a-eta-chart"></canvas></div></div>
+    <div class="chart-panel"><div class="chart-head"><div class="chart-ttl">💰 Incremental Revenue ($/tick)</div></div><div class="chart-body" style="min-height:170px"><canvas id="a-roi-chart"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══ REPORT TAB ══ -->
+<div class="tab-pane" id="tab-report">
+<div class="report-page">
+  <div class="report-actions">
+    <button class="btn-full" style="max-width:200px" onclick="printReport()">🖨 Print / Save PDF</button>
+    <button class="btn-full" style="max-width:200px" onclick="downloadCSV()">📥 Export CSV</button>
+    <button class="btn-full" style="max-width:200px" onclick="ANALYTICS.buildReport()">↻ Refresh</button>
+  </div>
+  <div id="report-content" class="report-content"><div class="empty-msg" style="padding:40px">Open this tab to generate the report.</div></div>
+</div>
+</div>
+
+<!-- ══ SETTINGS TAB ══ -->
+<div class="tab-pane" id="tab-settings">
+<div class="settings-page">
+  <div class="set-section" id="site-info-section" style="display:none">
+    <div class="set-sec-title">📍 Active Site</div>
+    <div class="set-grid">
+      <div class="set-field"><label>Site name<input id="set-site-name" type="text" readonly></label></div>
+      <div class="set-field"><label>Site ID <span style="text-transform:none;letter-spacing:0">(use as <code>SITE_ID</code> in the ESP32 firmware)</span><input id="set-site-id" type="text" readonly onclick="this.select()"></label></div>
+    </div>
+    <div class="set-note">To let your ESP32 write sensor data, sign it in as its own Firebase Auth user, then add its UID in the Firebase Console at <code>/sites/&lt;Site ID&gt;/devices/&lt;device UID&gt;</code> = <code>true</code>. See <code>firmware/README.md</code>.</div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">🔥 Firebase</div>
+    <div class="set-grid"><div class="set-field"><label>RTDB URL<input id="set-fb-url" type="url" value="https://solar-thermal-e-harvesting-default-rtdb.firebaseio.com"></label></div><div class="set-field"><label>Poll Interval (s)<input id="set-poll" type="number" value="2" min="1" max="60"></label></div></div>
+    <button class="btn-sm" style="margin-top:8px" onclick="testFbConn()">🔌 Test Connection</button>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">📍 Location (for Solar Physics)</div>
+    <div class="set-grid"><div class="set-field"><label>Latitude (°)<input id="set-lat" type="number" value="24.0" step="0.01"></label></div><div class="set-field"><label>Longitude (°)<input id="set-lon" type="number" value="45.0" step="0.01"></label></div></div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">☀ Collector &amp; Fluid</div>
+    <div class="set-grid-3">
+      <div class="set-field"><label>Area (m²)<input id="set-area" type="number" value="2.0" step="0.1"></label></div>
+      <div class="set-field"><label>Irradiance G (W/m²) <span style="color:var(--pbi-muted);font-size:8px">0=relative</span><input id="set-irrad" type="number" value="0"></label></div>
+      <div class="set-field"><label>Ambient Temp (°C)<input id="set-ambient" type="number" value="25" step="0.5"></label></div>
+      <div class="set-field"><label>Pipe Length (m)<input id="set-pipe-len" type="number" value="10" step="1"></label></div>
+      <div class="set-field"><label>Pipe Diameter (m)<input id="set-pipe-dia" type="number" value="0.025" step="0.001"></label></div>
+    </div>
+    <div class="set-note">When G &gt; 0: real IEC 12975 η = Q/(A·G). Pipe loss uses Q = U·π·D·L·(Tm−Ta). η-curve requires G input to plot the X-axis parameter.</div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">💰 Economics &amp; ROI</div>
+    <div class="set-grid">
+      <div class="set-field"><label>Electricity Tariff ($/kWh)<input id="set-tariff" type="number" value="0.15" step="0.01"></label></div>
+      <div class="set-field"><label>CO₂ Factor (kg/kWh)<input id="set-co2" type="number" value="0.475" step="0.01"></label></div>
+    </div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">⬡ Differential Controller</div>
+    <div class="set-grid"><div class="set-field"><label>ΔT ON threshold (°C)<input id="set-dton" type="number" value="8" step="0.5"></label></div><div class="set-field"><label>ΔT OFF threshold (°C)<input id="set-dtoff" type="number" value="3" step="0.5"></label></div></div>
+    <div class="set-note">Standard solar differential control: Pump ON when T3−T1 &ge; ΔT_on. Pump OFF when T3−T1 &le; ΔT_off. Industry standard: ON=8°C, OFF=3°C.</div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">🔔 Alarm Thresholds</div>
+    <div class="set-grid-3">
+      <div class="set-field"><label style="color:var(--t3)">T3 Absorber Max (°C)<input id="set-T3-max" type="number" value="90"></label></div>
+      <div class="set-field"><label style="color:var(--t4)">T4 Outlet Max (°C)<input id="set-T4-max" type="number" value="75"></label></div>
+      <div class="set-field"><label style="color:var(--t1)">T1 Storage Max (°C)<input id="set-T1-max" type="number" value="70"></label></div>
+      <div class="set-field"><label style="color:var(--f1)">F1 Inlet Min (L/min)<input id="set-F1-min" type="number" value="0.5" step="0.1"></label></div>
+      <div class="set-field"><label style="color:var(--pbi-accent)">Flow Balance Min (%)<input id="set-bal-min" type="number" value="85"></label></div>
+      <div class="set-field"><label style="color:var(--on)">Efficiency Min (%)<input id="set-eff-min" type="number" value="30"></label></div>
+      <div class="set-field"><label style="color:var(--al-crit)">Stagnation T3 (°C)<input id="set-stagnate" type="number" value="95"></label></div>
+      <div class="set-field"><label style="color:var(--al-info)">Freeze Risk (°C)<input id="set-freeze" type="number" value="5"></label></div>
+    </div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">🎛 Display &amp; Notifications</div>
+    <div class="set-toggles">
+      <label class="set-toggle"><input type="checkbox" id="set-sound" checked><span class="tog-slider"></span><span class="tog-lbl">Sound Alarms (Web Audio API)</span></label>
+      <label class="set-toggle"><input type="checkbox" id="set-unit-f"><span class="tog-slider"></span><span class="tog-lbl">Temperature in °F</span></label>
+      <label class="set-toggle" onclick="ALARMS.requestPush().then(ok=>ALARMS.toast(ok?'ok':'warn',ok?'✔':'⚠','Push Notifications',ok?'Enabled':'Permission denied'))"><input type="checkbox" id="set-push"><span class="tog-slider"></span><span class="tog-lbl">Browser Push Notifications</span></label>
+    </div>
+  </div>
+  <div class="set-section">
+    <div class="set-sec-title">🗄 Data Management</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-full" style="max-width:200px" onclick="downloadCSV()">📥 Export Session CSV</button>
+      <button class="btn-full" style="max-width:220px;color:var(--al-warn);border-color:var(--al-warn)" onclick="if(confirm('Clear session?'))clearSession()">🗑 Clear Session Data</button>
+    </div>
+  </div>
+  <button class="btn-full" style="margin-top:14px;border-color:var(--on);color:var(--on);font-size:13px;padding:11px" onclick="applySettings()">✔ Save &amp; Apply All Settings</button>
+</div>
+</div>
+
+</main>
+
+<footer class="app-footer">
+  <div>
+    <a href="/privacy.html">Privacy Policy</a>·
+    <a href="/terms.html">Terms &amp; Conditions</a>·
+    <a href="mailto:test@example.com" id="footer-contact-link">Contact</a>
+  </div>
+  <div class="contact-line">SuryaDash · Solar Prototype Inc · test@example.com</div>
+</footer>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div class="cookie-banner" id="cookie-banner">
+  <div class="cookie-text">
+    We use essential local storage to keep you signed in and remember your dashboard settings.
+    With your consent, we'd also like to use anonymized analytics to improve the Service.
+    Read our <a href="/privacy.html">Privacy Policy</a>.
+  </div>
+  <div class="cookie-actions">
+    <button class="cookie-btn" id="cookie-decline">Essential only</button>
+    <button class="cookie-btn primary" id="cookie-accept">Accept all</button>
+  </div>
+</div>
+
+</div><!-- /#app-root -->
+
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/site-manager.js"></script>
+<script src="assets/js/firebase-rest.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/alarms.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/solar-physics.js"></script>
+<script src="assets/js/roi.js"></script>
+<script src="assets/js/consent.js"></script>
+<script src="assets/js/tracking.js"></script>
+<script src="assets/js/ux-polish.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

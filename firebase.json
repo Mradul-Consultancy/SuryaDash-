@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "firmware/**",
+      "firebase-config/**",
+      "deploy/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=604800" }]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|png|svg|webp)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=2592000" }]
+      },
+      {
+        "source": "index.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ]
+  },
+  "database": {
+    "rules": "firebase-config/database.rules.json"
+  }
+}

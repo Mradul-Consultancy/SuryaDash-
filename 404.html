@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>404 — Page Not Found | SuryaDash</title>
+<meta name="description" content="This page doesn't exist. Return to the SuryaDash.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--pbi-bg:#141312;--pbi-panel:#201f1e;--pbi-border:#333130;--pbi-white:#eeece9;--pbi-muted:#72706d;--pbi-accent:#01b8d9;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--pbi-bg);color:var(--pbi-white);font-family:'Barlow',sans-serif;display:flex;align-items:center;justify-content:center;}
+  .wrap{text-align:center;max-width:480px;padding:40px 24px;}
+  .sun{width:72px;height:72px;margin:0 auto 28px;background:linear-gradient(135deg,#f9a825,#e65100);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 30px rgba(249,168,37,.35);animation:float 3s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .code{font-family:'IBM Plex Mono',monospace;font-size:72px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#f9a825,#01b8d9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  h1{font-size:20px;font-weight:700;margin-bottom:10px;}
+  p{font-size:13px;color:var(--pbi-muted);line-height:1.6;margin-bottom:28px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:var(--pbi-accent);color:#000;border-radius:7px;font-weight:700;font-size:13px;text-decoration:none;transition:opacity .2s;}
+  .btn:hover{opacity:.85;}
+  .btn-secondary{background:var(--pbi-panel);border:1px solid var(--pbi-border);color:var(--pbi-white);}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .links{margin-top:24px;font-size:11px;color:var(--pbi-muted);}
+  .links a{color:var(--pbi-muted);text-decoration:underline;margin:0 6px;}
+  .links a:hover{color:var(--pbi-white);}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="sun">☀</div>
+    <div class="code">404</div>
+    <h1>This collector panel doesn't exist</h1>
+    <p>The page you're looking for has wandered off-grid. It might have been moved, renamed, or the link might be mistyped.</p>
+    <div class="actions">
+      <a href="/" class="btn">← Back to Dashboard</a>
+      <a href="mailto:test@example.com" class="btn btn-secondary">Contact Support</a>
+    </div>
+    <div class="links">
+      <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms</a>
+    </div>
+  </div>
+</body>
+</html>

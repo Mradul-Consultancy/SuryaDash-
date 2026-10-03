@@ -1,0 +1,33 @@
+{
+  "name": "SuryaDash — Live Dashboard",
+  "short_name": "SolarDash",
+  "description": "Real-time solar thermal monitoring — Firebase RTDB",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141312",
+  "theme_color": "#1b1a19",
+  "orientation": "any",
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "assets/img/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/img/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "id": "./",
+  "scope": "./"
+}
